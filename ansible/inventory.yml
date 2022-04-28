@@ -1,0 +1,20 @@
+[hosts]
+  esdata1
+  esdata2
+  esdata3
+  escoord1
+  escoord2
+  esmaster1
+  esmaster2
+  esmaster3
+[data]
+  esdata1
+  esdata2
+  esdata3
+[masters]
+  esmaster1
+  esmaster2
+  esmaster3
+[coordinating]
+  escoord1
+  escoord2
