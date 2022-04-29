@@ -13,11 +13,11 @@ resource "aws_security_group" "es" {
   }
 }
 
-resource "aws_iam_service_linked_role" "es" {
+resource "aws_iam_service_linked_role" "esiam" {
   aws_service_name = "es.amazonaws.com"
 }
 
-resource "aws_elasticsearch_domain" "es" {
+resource "aws_elasticsearch_domain" "esdomain" {
   domain_name = local.elk_domain
   elasticsearch_version = "7.7"
 
@@ -33,13 +33,12 @@ resource "aws_elasticsearch_domain" "es" {
 
   vpc_options {
       subnet_ids = [
-        aws_subnet.nated_1.id,
-        aws_subnet.nated_2.id,
-        aws_subnet.nated_3.id
+        aws_subnet.private-elk.id,
+        aws_subnet.public-elk.id
       ]
 
       security_group_ids = [
-          aws_security_group.es.id
+          aws_security_group.my_private_sg.id
       ]
   }
 
@@ -53,7 +52,7 @@ resource "aws_elasticsearch_domain" "es" {
   "Version": "2012-10-17",
   "Statement": [
       {
-          "Action": "es:*",
+          "Action": "my_private_sg:*",
           "Principal": "*",
           "Effect": "Allow",
           "Resource": "arn:aws:es:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:domain/${local.elk_domain}/*"
@@ -72,9 +71,9 @@ resource "aws_elasticsearch_domain" "es" {
 }
 
 output "elk_endpoint" {
-  value = aws_elasticsearch_domain.es.endpoint
+  value = aws_elasticsearch_domain.esdomain.endpoint
 }
 
 output "elk_kibana_endpoint" {
-  value = aws_elasticsearch_domain.es.kibana_endpoint
+  value = aws_elasticsearch_domain.esdomain.kibana_endpoint
 }

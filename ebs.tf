@@ -5,6 +5,6 @@ resource "aws_volume_attachment" "ebs_att" {
 }
 
 resource "aws_ebs_volume" "elasticsearch_storage" {
-  availability_zone = "us-east-1b"
+  availability_zone = "us-east-2b"
   size              = 50
 }
