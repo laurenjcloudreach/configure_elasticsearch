@@ -1,0 +1,87 @@
+# This will be the playbook for installing the ElasticSearch app on the provisioned EC2 instance.
+
+# Once the ElasticSearch server is deployed automatically in the pipeline
+# this Ansible playbook will ensure that the ElasticSearch app ios installed on the server 
+# and configures the ports so that the other apps can communicate
+
+---
+- hosts: webservers
+  gather_facts: no
+  become: true 
+  tasks:
+
+    - name: Updating apt package lists 
+      apt:
+        update_cache: yes
+      
+    - name: Installing ElasticSearch dependencies - Java and Nginx
+      apt:
+        pkg:
+          - openjdk-8-jdk
+          - nginx
+        state: latest
+      
+    - name: Adding Elastic repository - importing PGP key for Elastic
+      ansible.builtin.apt_key:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch 
+        state: present    
+      
+    - name: Adding Elastic repository - installing apt-transport package
+      apt: 
+        name: apt-transport-https
+        state: latest
+      
+    - name: Adding Elastic repository - adding to the system's repository list
+      ansible.builtin.apt_repository:
+        repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+        state: present
+        filename: elastic-7.x.list
+
+    - name: Installing ElasticSearch - updating apt repositories
+      apt:
+        update_cache: yes
+      
+    - name: Installing ElasticSearch
+      apt: 
+        name: elasticsearch
+        state: latest
+
+    - name: Configuring ElasticSeach - IP binding
+      replace:
+        path: /etc/elasticsearch/elasticsearch.yml
+        regexp: '#network.hosts: 3.144.252.56'
+        replace: 'network.hosts: "{{ elasticsearch-ip }}"'
+
+    - name: Configuring ElasticSeach - IP binding
+      replace:
+        path: /etc/elasticsearch/elasticsearch.yml
+        regexp: '#http.port: 9200'
+        replace: 'http.port: 9200' 
+
+    - name: Adding discovery.seed_hosts information to configuration
+      lineinfile:
+        path: /etc/elasticsearch/elasticsearch.yml
+        line: 'discovery.seed_hosts: ["{{ elasticsearch-ip }}:5044"]'
+
+    - name: Configuring ElasticSeach - adjusting JVM heap size - 1.
+      replace: 
+        path: /etc/elasticsearch/jvm.options
+        regexp: '-Xms4g'
+        replace: '-Xms512m'  
+
+    - name: Configuring ElasticSeach - adjusting JVM heap size - 2.
+      replace: 
+        path: /etc/elasticsearch/jvm.options
+        regexp: '-Xmx4g'
+        replace: '-Xmx512m'   
+
+    - name: Starting ElasticSearch
+      systemd:
+        name: elasticsearch
+        state: started
+      
+    - name: Enabling ElasticSearch
+      systemd:
+        name: elasticsearch
+        enabled: yes
+
